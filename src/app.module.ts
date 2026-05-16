@@ -1,4 +1,3 @@
-// app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -13,52 +12,39 @@ import { ResetPasswordModule } from './reset-password/reset-password.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
 
     TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const isProduction = config.get<string>('NODE_ENV') === 'production';
         const databaseUrl = config.get<string>('DATABASE_URL');
 
-        // Парсим DATABASE_URL для проверки хоста
-        let isLocal = false;
-        if (databaseUrl) {
-          try {
-            const url = new URL(databaseUrl);
-            const host = url.hostname;
-            // Локальные хосты: localhost, 127.0.0.1, host.docker.internal
-            isLocal =
-              host === 'localhost' ||
-              host === '127.0.0.1' ||
-              host === 'host.docker.internal';
-          } catch {
-            // Если не удалось распарсить — считаем, что не локальный
-          }
+        if (!databaseUrl) {
+          throw new Error('DATABASE_URL is missing');
         }
 
         return {
           type: 'postgres',
           url: databaseUrl,
-          // SSL только для продакшена и не-локальных хостов
-          ssl:
-            isProduction && !isLocal
-              ? { rejectUnauthorized: false } // Для облачных БД с self-signed сертификатами
-              : false,
+          ssl: { rejectUnauthorized: false },
           autoLoadEntities: true,
           synchronize: false,
         };
       },
     }),
 
-    JwtModule,
+    JwtModule.register({}),
     UsersModule,
     CardModule,
     MailerModule,
     ResetPasswordModule,
   ],
-  exports: [JwtModule],
   controllers: [AppController],
   providers: [AppService],
+  exports: [JwtModule],
 })
 export class AppModule {}
