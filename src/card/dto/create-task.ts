@@ -5,7 +5,8 @@ export class CreateTask {
   @IsString({ message: 'Названи должно быть строкой' })
   @IsNotEmpty({ message: 'Название Обязательно' })
   title!: string;
-  @IsString({ message: 'Название задачи' })
+  @IsString({ message: 'Название задачи должно быть строкой' })
+  @IsNotEmpty({ message: 'Название задачи обязательно' })
   name_task!: string;
   @IsString({ message: 'Описание должно быть строкой' })
   @IsNotEmpty({ message: 'Описание Обязательно' })

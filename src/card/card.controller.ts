@@ -11,16 +11,13 @@ import {
 import { CardService } from './card.service';
 import { Card } from './card.entites';
 import { CreateTask } from './dto/create-task';
-import { PATH_METADATA } from '@nestjs/common/constants';
-import { dateTimestampProvider } from 'rxjs/internal/scheduler/dateTimestampProvider';
 import { EditTask } from './dto/update-task';
-import { CurrentUser } from 'src/decorator/current-user.decorator';
 
 @Controller('task')
 export class CardController {
   constructor(private service: CardService) {}
 
-  @Get('task')
+  @Get()
   async getTasks(): Promise<Card[]> {
     return this.service.Task();
   }
@@ -51,7 +48,10 @@ export class CardController {
   }
 
   @Patch('editTask/:task_id')
-  async editTask(@Param('task_id') task_id: number, @Body() dto: EditTask) {
+  async editTask(
+    @Param('task_id', ParseIntPipe) task_id: number,
+    @Body() dto: EditTask,
+  ) {
     return this.service.editTask(task_id, dto);
   }
 }

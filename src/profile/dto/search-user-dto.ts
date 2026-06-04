@@ -1,4 +1,11 @@
-import { IsOptional, IsString, MaxLength, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  MaxLength,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SearchUsersDto {
@@ -17,6 +24,6 @@ export class SearchUsersDto {
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  @MaxLength(100)
+  @Max(100)
   limit?: number = 20; 
 }

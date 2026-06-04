@@ -1,37 +1,31 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { MailerService } from './mailer.service';
+import { SendEmailDto } from './dto/send-email-dto';
+import { VerifCode } from './dto/send-code-dto';
 
 @Controller('')
 export class MailerController {
   constructor(private readonly mailerService: MailerService) {}
 
   @Post('sendemail')
-  async sendEmail(@Body() body: { email: string }) {
-    const { email } = body;
-    if (!email) {
-      return { error: 'Укажи email=test@example.com' };
-    }
+  async sendEmail(@Body() dto: SendEmailDto) {
     try {
-      await this.mailerService.SendMail(email);
+      await this.mailerService.SendMail(dto.email);
     } catch (error) {}
   }
 
   @Post('sendcode')
-  async sendCode(@Body() body: { email: string }) {
-    const { email } = body;
-    if (!email) {
-      return { error: 'Укажите свою почту' };
-    }
+  async sendCode(@Body() dto: SendEmailDto) {
     try {
-      await this.mailerService.SendCodeV(email);
+      await this.mailerService.SendCodeV(dto.email);
     } catch {}
   }
-  
+
   @Post('verifycode')
-  async verycode(@Body() body: { email: string; code: string }) {
+  async verycode(@Body() dto: VerifCode) {
     const isValid = await this.mailerService.VerifycationCode(
-      body.code,
-      body.email,
+      dto.code,
+      dto.email,
     );
     return isValid
       ? { success: true, message: 'Email подтверждён!' }
