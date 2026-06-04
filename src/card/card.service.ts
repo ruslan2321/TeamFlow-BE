@@ -1,20 +1,13 @@
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Card } from './card.entites';
 import { Repository } from 'typeorm';
 import { CreateTask } from './dto/create-task';
-import { log } from 'node:console';
 import { EditTask } from './dto/update-task';
 import { User } from 'src/profile/user.entities';
 
 @Injectable()
 export class CardService {
-  cardRepo: any;
   constructor(
     @InjectRepository(Card)
     private repo: Repository<Card>,
@@ -39,10 +32,19 @@ export class CardService {
     if (!user) throw new NotFoundException('Исполнитель не найден');
 
     const newTask = this.repo.create({
-      ...dto,
+      title: dto.title,
+      name_task: dto.name_task,
+      description: dto.description,
+      status: dto.status,
       assignedUser: user,
     });
-    return this.repo.save(newTask);
+
+    const saved = await this.repo.save(newTask);
+
+    return this.repo.findOneOrFail({
+      where: { task_id: saved.task_id },
+      relations: ['assignedUser'],
+    });
   }
   async deletTask(task_id:number): Promise<void>{
     const res = await this.repo.delete(task_id)
