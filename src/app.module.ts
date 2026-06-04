@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,20 +10,21 @@ import { Card } from './card/card.entites';
 import { CardModule } from './card/card.module';
 import { MailerModule } from './mailer/mailer.module';
 import { ResetPasswordModule } from './reset-password/reset-password.module';
+import { getDatabaseUrl } from './config/database-url';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        url: config.getOrThrow<string>('DATABASE_URL'),
-        autoLoadEntities: true,
-        synchronize: true,
-        ssl: { rejectUnauthorized: false },
-      }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      url: getDatabaseUrl(),
+      autoLoadEntities: true,
+      synchronize: process.env.DB_SYNCHRONIZE !== 'false',
+      ssl: { rejectUnauthorized: false },
+      extra: {
+        max: process.env.VERCEL ? 1 : 10,
+        connectionTimeoutMillis: 15_000,
+      },
     }),
 
     TypeOrmModule.forFeature([User, Card]),
