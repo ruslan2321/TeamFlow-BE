@@ -17,7 +17,7 @@ import { EditTask } from './dto/update-task';
 export class CardController {
   constructor(private service: CardService) {}
 
-  @Get()
+  @Get('task')
   async getTasks(): Promise<Card[]> {
     return this.service.Task();
   }
