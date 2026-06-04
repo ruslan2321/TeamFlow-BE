@@ -27,3 +27,9 @@ function sanitizeNeonUrl(url: string): string {
   }
   return parsed.toString();
 }
+
+export function shouldSynchronizeSchema(): boolean {
+  if (process.env.DB_SYNCHRONIZE === 'true') return true;
+  if (process.env.DB_SYNCHRONIZE === 'false') return false;
+  return !process.env.VERCEL && process.env.NODE_ENV !== 'production';
+}

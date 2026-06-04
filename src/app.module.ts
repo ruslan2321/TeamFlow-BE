@@ -10,7 +10,7 @@ import { Card } from './card/card.entites';
 import { CardModule } from './card/card.module';
 import { MailerModule } from './mailer/mailer.module';
 import { ResetPasswordModule } from './reset-password/reset-password.module';
-import { getDatabaseUrl } from './config/database-url';
+import { getDatabaseUrl, shouldSynchronizeSchema } from './config/database-url';
 
 @Module({
   imports: [
@@ -19,7 +19,7 @@ import { getDatabaseUrl } from './config/database-url';
       type: 'postgres',
       url: getDatabaseUrl(),
       autoLoadEntities: true,
-      synchronize: process.env.DB_SYNCHRONIZE !== 'false',
+      synchronize: shouldSynchronizeSchema(),
       ssl: { rejectUnauthorized: false },
       extra: {
         max: process.env.VERCEL ? 1 : 10,
