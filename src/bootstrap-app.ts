@@ -18,6 +18,5 @@ export async function configureApp(
     }),
   );
 
-  await app.init();
   return app;
 }
