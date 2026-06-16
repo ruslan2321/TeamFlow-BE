@@ -11,7 +11,7 @@ import {
 import { CardService } from './card.service';
 import { CreateTask } from './dto/create-task';
 import { EditTask } from './dto/update-task';
-import { TaskResponseDto } from 'src/common/mappers/card.mapper';
+import { TaskResponseDto } from '../common/mappers/card.mapper';
 
 @Controller('task')
 export class CardController {

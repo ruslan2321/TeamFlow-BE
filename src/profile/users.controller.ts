@@ -23,8 +23,8 @@ import { login } from './dto/login-user-dto';
 import { SearchUsersDto } from './dto/search-user-dto';
 import { AddToTeamDto } from './dto/add-to-team.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { avatarUploadOptions } from 'src/config/avatar-upload.config';
-import { toAuthResponse, toRegisterResponse } from 'src/common/mappers/user.mapper';
+import { avatarUploadOptions } from '../config/avatar-upload.config';
+import { toAuthResponse, toRegisterResponse } from '../common/mappers/user.mapper';
 
 @Controller('')
 export class UsersController {

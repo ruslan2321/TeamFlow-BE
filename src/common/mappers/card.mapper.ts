@@ -1,4 +1,4 @@
-import { Card } from 'src/card/card.entites';
+import { Card } from '../../card/card.entites';
 import { toPublicUser, PublicUserDto } from './user.mapper';
 
 export interface TaskResponseDto {

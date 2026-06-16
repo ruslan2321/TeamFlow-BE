@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/profile/user.entities';
+import { User } from '../profile/user.entities';
 import { Repository } from 'typeorm';
 
 @Injectable()

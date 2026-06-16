@@ -4,12 +4,12 @@ import { Card } from './card.entites';
 import { Repository } from 'typeorm';
 import { CreateTask } from './dto/create-task';
 import { EditTask } from './dto/update-task';
-import { User } from 'src/profile/user.entities';
+import { User } from '../profile/user.entities';
 import {
   TaskResponseDto,
   toTaskList,
   toTaskResponse,
-} from 'src/common/mappers/card.mapper';
+} from '../common/mappers/card.mapper';
 
 @Injectable()
 export class CardService {

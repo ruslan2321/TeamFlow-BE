@@ -7,7 +7,7 @@ import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { User } from 'src/profile/user.entities';
+import { User } from '../profile/user.entities';
 
 const RESET_CODE_TTL_MS = 15 * 60 * 1000;
 

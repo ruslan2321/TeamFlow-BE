@@ -3,7 +3,10 @@ import { existsSync, mkdirSync } from 'fs';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 
-const uploadsRoot = process.env.VERCEL
+const isServerless =
+  process.env.VERCEL === '1' || process.cwd().startsWith('/var/task');
+
+const uploadsRoot = isServerless
   ? join('/tmp', 'uploads')
   : join(process.cwd(), 'uploads');
 
@@ -15,6 +18,8 @@ export function ensureUploadDirs(): void {
     mkdirSync(AVATARS_DIR, { recursive: true });
   }
 }
+
+ensureUploadDirs();
 
 export function toAvatarUrl(filename?: string | null): string | null {
   if (!filename) return null;

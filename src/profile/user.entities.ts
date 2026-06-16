@@ -8,7 +8,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Card } from 'src/card/card.entites';
+import { Card } from '../card/card.entites';
 import { UserStatus } from './dto/user-status';
 
 @Entity('users')

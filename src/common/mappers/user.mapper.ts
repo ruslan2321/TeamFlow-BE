@@ -1,6 +1,6 @@
-import { User } from 'src/profile/user.entities';
-import { UserStatus } from 'src/profile/dto/user-status';
-import { toAvatarUrl } from 'src/config/avatar-upload.config';
+import { User } from '../../profile/user.entities';
+import { UserStatus } from '../../profile/dto/user-status';
+import { toAvatarUrl } from '../../config/avatar-upload.config';
 
 /** Минимум для списков, поиска, assignee задачи */
 export interface PublicUserDto {

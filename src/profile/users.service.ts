@@ -17,11 +17,11 @@ import { join } from 'path';
 import {
   avatarStorageFileName,
   AVATARS_DIR,
-} from 'src/config/avatar-upload.config';
+} from '../config/avatar-upload.config';
 import {
   getJwtExpiresIn,
   getJwtExpiresInSeconds,
-} from 'src/config/jwt.config';
+} from '../config/jwt.config';
 import {
   PublicUserDto,
   PublicProfileDto,
@@ -31,7 +31,7 @@ import {
   toPublicUser,
   toTeamMember,
   toUserProfile,
-} from 'src/common/mappers/user.mapper';
+} from '../common/mappers/user.mapper';
 
 @Injectable()
 export class UserService {
