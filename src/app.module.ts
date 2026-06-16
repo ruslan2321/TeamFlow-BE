@@ -15,18 +15,21 @@ import { getDatabaseUrl, shouldSynchronizeSchema } from './config/database-url';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: getDatabaseUrl(),
-      autoLoadEntities: true,
-      synchronize: shouldSynchronizeSchema(),
-      ssl: { rejectUnauthorized: false },
-      extra: {
-        max: process.env.VERCEL ? 1 : 10,
-        connectionTimeoutMillis: 15_000,
-      },
+    TypeOrmModule.forRootAsync({
+      useFactory: () => ({
+        type: 'postgres' as const,
+        url: getDatabaseUrl(),
+        autoLoadEntities: true,
+        synchronize: shouldSynchronizeSchema(),
+        ssl: { rejectUnauthorized: false },
+        extra: {
+          max: process.env.VERCEL ? 1 : 10,
+          connectionTimeoutMillis: 15_000,
+        },
+        retryAttempts: 2,
+        retryDelay: 2000,
+      }),
     }),
-
     TypeOrmModule.forFeature([User, Card]),
     UsersModule,
     CardModule,
