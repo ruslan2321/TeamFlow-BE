@@ -6,8 +6,8 @@ const DEFAULT_ORIGINS = [
   'https://team-flow-iwlet6sl3-alanks-projects-619353e8.vercel.app',
 ];
 
-/** Preview-деплои Vercel вида https://team-flow-xxx.vercel.app */
-const VERCEL_PREVIEW_ORIGIN = /^https:\/\/team-flow[a-z0-9-]*\.vercel\.app$/i;
+/** Любой preview/production на vercel.app (фронт меняет URL при каждом деплое) */
+const VERCEL_APP_ORIGIN = /^https:\/\/[\w-]+\.vercel\.app$/i;
 
 export function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) {
@@ -15,15 +15,21 @@ export function isAllowedOrigin(origin: string | undefined): boolean {
   }
 
   const fromEnv = process.env.FRONTEND_URL ?? process.env.CORS_ORIGINS;
-  const allowed = fromEnv
-    ? fromEnv.split(',').map((item) => item.trim()).filter(Boolean)
-    : DEFAULT_ORIGINS;
+  if (fromEnv) {
+    const allowed = fromEnv
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (allowed.includes(origin)) {
+      return true;
+    }
+  }
 
-  if (allowed.includes(origin)) {
+  if (DEFAULT_ORIGINS.includes(origin)) {
     return true;
   }
 
-  return VERCEL_PREVIEW_ORIGIN.test(origin);
+  return VERCEL_APP_ORIGIN.test(origin);
 }
 
 export function getCorsConfig() {
@@ -32,15 +38,18 @@ export function getCorsConfig() {
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      if (isAllowedOrigin(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error(`Origin ${origin} is not allowed by CORS`));
+      // callback(Error) даёт 500 на OPTIONS — только true/false
+      callback(null, isAllowedOrigin(origin));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
+    optionsSuccessStatus: 204,
   };
 }
