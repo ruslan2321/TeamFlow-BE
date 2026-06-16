@@ -1,12 +1,3 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
-  "functions": {
-    "api/index.ts": {
-      "includeFiles": "dist/**",
-      "maxDuration": 30
-    }
-  }
+  "buildCommand": "npm run build"
 }
