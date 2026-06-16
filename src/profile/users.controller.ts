@@ -16,8 +16,6 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 
 import { UserService } from './users.service';
 import { CreateUser } from './dto/create-user-dto';
@@ -25,6 +23,8 @@ import { login } from './dto/login-user-dto';
 import { SearchUsersDto } from './dto/search-user-dto';
 import { AddToTeamDto } from './dto/add-to-team.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { avatarUploadOptions } from 'src/config/avatar-upload.config';
+import { toAuthResponse, toRegisterResponse } from 'src/common/mappers/user.mapper';
 
 @Controller('')
 export class UsersController {
@@ -43,26 +43,28 @@ export class UsersController {
   @Post('add_user')
   async register(@Body() dto: CreateUser) {
     const res = await this.service.createUser(dto);
-
-    return {
-      username: res.user.username,
-      email: res.user.email,
-      token: res.token,
-    };
+    return toRegisterResponse(res.user, res.token);
   }
 
   @Post('login')
   async login(@Body() dto: login) {
-    const user = await this.service.loginUser(dto.login, dto.password);
+    const result = await this.service.loginUser(
+      dto.login,
+      dto.password,
+      dto.rememberMe ?? false,
+    );
 
-    if (!user) {
+    if (!result) {
       throw new UnauthorizedException('Логин или пароль неверный');
     }
 
-    return {
-      ...user.user,
-      token: user.token,
-    };
+    return toAuthResponse(
+      result.user,
+      result.token,
+      result.expiresIn,
+      result.expiresInSeconds,
+      dto.rememberMe ?? false,
+    );
   }
 
   @Post(':ownerId/team')
@@ -96,36 +98,28 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Patch('update_avatar')
-  @UseInterceptors(
-    FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './uploads/avatars',
-        filename: (_req, file, cb) => {
-          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-        },
-      }),
-      fileFilter: (_req, file, cb) => {
-        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-
-        if (!allowedMimeTypes.includes(file.mimetype)) {
-          return cb(
-            new BadRequestException('Разрешены только JPG, PNG и WEBP'),
-            false,
-          );
-        }
-
-        cb(null, true);
-      },
-      limits: {
-        fileSize: 5 * 1024 * 1024,
-      },
-    }),
-  )
-  async updateAvatar(
+  @Post('update_avatar')
+  @UseInterceptors(FileInterceptor('avatar', avatarUploadOptions))
+  async uploadAvatar(
     @Req() req: any,
     @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.handleAvatarUpload(req, file);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('update_avatar')
+  @UseInterceptors(FileInterceptor('avatar', avatarUploadOptions))
+  async patchAvatar(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.handleAvatarUpload(req, file);
+  }
+
+  private async handleAvatarUpload(
+    req: { user?: { sub?: number } },
+    file: Express.Multer.File,
   ) {
     const userId = req.user?.sub;
 
@@ -142,6 +136,7 @@ export class UsersController {
     return {
       message: 'Аватар успешно обновлен',
       user: updatedUser,
+      avatar: updatedUser.avatar,
     };
   }
 }

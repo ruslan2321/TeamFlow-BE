@@ -14,6 +14,24 @@ import { SearchUsersDto } from './dto/search-user-dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import {
+  avatarStorageFileName,
+  AVATARS_DIR,
+} from 'src/config/avatar-upload.config';
+import {
+  getJwtExpiresIn,
+  getJwtExpiresInSeconds,
+} from 'src/config/jwt.config';
+import {
+  PublicUserDto,
+  PublicProfileDto,
+  TeamMemberDto,
+  UserProfileDto,
+  toPublicProfile,
+  toPublicUser,
+  toTeamMember,
+  toUserProfile,
+} from 'src/common/mappers/user.mapper';
 
 @Injectable()
 export class UserService {
@@ -23,7 +41,21 @@ export class UserService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async createUser(dto: CreateUser): Promise<{ user: User; token: string }> {
+  private sanitizeUser(user: User): UserProfileDto {
+    return toUserProfile(user);
+  }
+
+  private sanitizeTeamMember(user: User): TeamMemberDto {
+    return toTeamMember(user);
+  }
+
+  private sanitizePublicUser(user: User): PublicUserDto {
+    return toPublicUser(user);
+  }
+
+  async createUser(
+    dto: CreateUser,
+  ): Promise<{ user: UserProfileDto; token: string }> {
     try {
       const salt = 10;
       const hashPass = await bcrypt.hash(dto.password, salt);
@@ -39,7 +71,7 @@ export class UserService {
 
       const token = this.jwtService.sign(payload);
 
-      return { user: savedUser, token };
+      return { user: this.sanitizeUser(savedUser), token };
     } catch (error) {
       console.error('createUser error:', error);
       throw new InternalServerErrorException(
@@ -51,7 +83,7 @@ export class UserService {
   async updateProfile(
     id: number,
     updateDto: UpdateUserDto,
-  ): Promise<Partial<User>> {
+  ): Promise<UserProfileDto> {
     const user = await this.repo.findOne({ where: { id } });
 
     if (!user) {
@@ -89,8 +121,7 @@ export class UserService {
     }
 
     if (Object.keys(updateData).length === 0) {
-      const { password, ...safeUser } = user;
-      return safeUser;
+      return this.sanitizeUser(user);
     }
 
     if (updateData.email && updateData.email !== user.email) {
@@ -122,8 +153,7 @@ export class UserService {
         throw new NotFoundException('Пользователь не найден после обновления');
       }
 
-      const { password, ...safeUser } = updatedUser;
-      return safeUser;
+      return this.sanitizeUser(updatedUser);
     } catch (error: any) {
       const code = error?.driverError?.code ?? error?.code;
       const constraint =
@@ -151,7 +181,7 @@ export class UserService {
   async updateAvatar(
     id: number,
     avatarFileName: string,
-  ): Promise<Partial<User>> {
+  ): Promise<UserProfileDto> {
     const user = await this.repo.findOne({ where: { id } });
 
     if (!user) {
@@ -159,13 +189,9 @@ export class UserService {
     }
 
     try {
-      if (user.avatar) {
-        const oldFilePath = join(
-          process.cwd(),
-          'uploads',
-          'avatars',
-          user.avatar,
-        );
+      const oldFileName = avatarStorageFileName(user.avatar);
+      if (oldFileName) {
+        const oldFilePath = join(AVATARS_DIR, oldFileName);
 
         try {
           await fs.unlink(oldFilePath);
@@ -186,8 +212,7 @@ export class UserService {
         );
       }
 
-      const { password, ...safeUser } = updatedUser;
-      return safeUser;
+      return this.sanitizeUser(updatedUser);
     } catch (error) {
       console.error('updateAvatar error:', error);
       throw new InternalServerErrorException('Ошибка при обновлении аватара');
@@ -197,7 +222,13 @@ export class UserService {
   async loginUser(
     login: string,
     password: string,
-  ): Promise<{ user: Partial<User>; token: string } | null> {
+    rememberMe = false,
+  ): Promise<{
+    user: UserProfileDto;
+    token: string;
+    expiresIn: string;
+    expiresInSeconds: number;
+  } | null> {
     const user = await this.repo.findOne({ where: { login } });
 
     if (!user) return null;
@@ -205,26 +236,32 @@ export class UserService {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return null;
 
-    const { password: _, ...safeUser } = user;
     const payload = {
       sub: user.id,
       login: user.login,
       username: user.username,
       email: user.email,
+      rememberMe,
     };
 
-    const token = this.jwtService.sign(payload);
+    const expiresIn = getJwtExpiresIn(rememberMe);
+    const expiresInSeconds = getJwtExpiresInSeconds(rememberMe);
+    const token = this.jwtService.sign(payload, { expiresIn: expiresInSeconds });
 
-    return { user: safeUser, token };
+    return {
+      user: this.sanitizeUser(user),
+      token,
+      expiresIn,
+      expiresInSeconds,
+    };
   }
 
-  async findAll(): Promise<Partial<User>[]> {
+  async findAll(): Promise<PublicUserDto[]> {
     const users = await this.repo.find();
-
-    return users.map(({ password, ...safeUser }) => safeUser);
+    return users.map((user) => this.sanitizePublicUser(user));
   }
 
-  async Profile(id: number): Promise<Partial<User> | null> {
+  async Profile(id: number): Promise<PublicProfileDto | null> {
     const user = await this.repo.findOne({
       where: { id },
       relations: ['teamMembers'],
@@ -232,16 +269,7 @@ export class UserService {
 
     if (!user) return null;
 
-    const {
-      password,
-      verificationCode,
-      verificationCodeExpires,
-      passwordResetCode,
-      passwordResetExpires,
-      ...safeUser
-    } = user as any;
-
-    return safeUser;
+    return toPublicProfile(user);
   }
 
   async searchUsers(dto: SearchUsersDto) {
@@ -262,16 +290,7 @@ export class UserService {
       .take(limit)
       .getManyAndCount();
 
-    const safeUsers = users.map(
-      ({
-        password,
-        verificationCode,
-        verificationCodeExpires,
-        passwordResetCode,
-        passwordResetExpires,
-        ...safe
-      }: any) => safe,
-    );
+    const safeUsers = users.map((user) => this.sanitizePublicUser(user));
 
     return {
       data: safeUsers,
@@ -316,12 +335,7 @@ export class UserService {
       success: true,
       message: 'Пользователь добавлен в команду',
       alreadyAdded: false,
-      data: {
-        id: member.id,
-        username: member.username,
-        email: member.email,
-        avatar: member.avatar ?? null,
-      },
+      data: this.sanitizeTeamMember(member),
     };
   }
 
@@ -337,16 +351,7 @@ export class UserService {
     }
 
     const filteredMembers =
-      user.teamMembers?.map(
-        ({
-          password,
-          verificationCode,
-          verificationCodeExpires,
-          passwordResetCode,
-          passwordResetExpires,
-          ...safe
-        }: any) => safe,
-      ) || [];
+      user.teamMembers?.map((member) => this.sanitizeTeamMember(member)) || [];
 
     return {
       data: filteredMembers,

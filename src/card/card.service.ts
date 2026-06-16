@@ -5,6 +5,11 @@ import { Repository } from 'typeorm';
 import { CreateTask } from './dto/create-task';
 import { EditTask } from './dto/update-task';
 import { User } from 'src/profile/user.entities';
+import {
+  TaskResponseDto,
+  toTaskList,
+  toTaskResponse,
+} from 'src/common/mappers/card.mapper';
 
 @Injectable()
 export class CardService {
@@ -15,19 +20,23 @@ export class CardService {
     private readonly userRepo: Repository<User>,
   ) {}
 
-  async Task(): Promise<Card[]> {
-    return this.repo.find({
+  async Task(): Promise<TaskResponseDto[]> {
+    const tasks = await this.repo.find({
       relations: ['assignedUser'],
     });
+    return toTaskList(tasks);
   }
-  async getMyTasks(userId: number): Promise<Card[]> {
-    return this.repo.find({
-      where: { userId },
+
+  async getMyTasks(userId: number): Promise<TaskResponseDto[]> {
+    const tasks = await this.repo.find({
+      where: { assignedUser: { id: userId } },
       relations: ['assignedUser'],
       order: { createAt: 'DESC' },
     });
+    return toTaskList(tasks);
   }
-  async addTask(dto: CreateTask, userId: number): Promise<Card> {
+
+  async addTask(dto: CreateTask, userId: number): Promise<TaskResponseDto> {
     const user = await this.userRepo.findOneBy({ id: userId });
     if (!user) throw new NotFoundException('Исполнитель не найден');
 
@@ -46,26 +55,28 @@ export class CardService {
         where: { task_id: saved.task_id },
         relations: ['assignedUser'],
       });
-      if (task) return task;
+      if (task) return toTaskResponse(task);
     }
 
-    return saved;
-  }
-  async deletTask(task_id:number): Promise<void>{
-    const res = await this.repo.delete(task_id)
+    return toTaskResponse(saved);
   }
 
-  async viewTask(task_id: number): Promise<Card> {
-    const tasks = await this.repo.findOne({
+  async deletTask(task_id: number): Promise<void> {
+    await this.repo.delete(task_id);
+  }
+
+  async viewTask(task_id: number): Promise<TaskResponseDto> {
+    const task = await this.repo.findOne({
       where: { task_id },
       relations: { assignedUser: true },
     });
-    if (!tasks) {
+    if (!task) {
       throw new NotFoundException(`Задача с ID ${task_id} не найдена`);
     }
-    return tasks;
+    return toTaskResponse(task);
   }
-  async editTask(task_id: number, dto: EditTask): Promise<Card> {
+
+  async editTask(task_id: number, dto: EditTask): Promise<TaskResponseDto> {
     const item = await this.repo.findOne({
       where: { task_id },
       relations: ['assignedUser'],
@@ -105,9 +116,11 @@ export class CardService {
       await this.repo.save(item);
     }
 
-    return this.repo.findOneOrFail({
+    const updated = await this.repo.findOneOrFail({
       where: { task_id },
       relations: ['assignedUser'],
     });
+
+    return toTaskResponse(updated);
   }
 }

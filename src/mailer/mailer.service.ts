@@ -51,18 +51,27 @@ export class MailerService {
     });
   }
   async SendCodeV(email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.userRepository.findOne({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user) {
+      return;
+    }
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     await this.userRepository.update(
-      { email },
+      { id: user.id },
       {
-        verificationCode: code,
-         verificationCodeExpires: new Date(Date.now() + 3 * 60 * 1000)
+        passwordResetCode: code,
+        passwordResetExpires: new Date(Date.now() + 15 * 60 * 1000),
       },
     );
     await this.mailer.sendMail({
-      to: email,
-      subject: 'Сброс пароля',
-      text: 'Ваш код потдверждения для сброса пароля',
+      to: normalizedEmail,
+      subject: 'Сброс пароля — TeamFlow',
+      text: `Ваш код для сброса пароля: ${code}. Код действует 15 минут.`,
       html: `<div
       style="
         max-width: 600px;
@@ -71,7 +80,7 @@ export class MailerService {
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       "
     >
-      <h1 style="color: #ffffff; text-align: center">Сброс пароля</h1>
+      <h1 style="color: #0099ff; text-align: center">Сброс пароля</h1>
       <div
         style="
           background: #0099ff;
@@ -95,7 +104,7 @@ export class MailerService {
           font-family: Arial, Helvetica, sans-serif;
         "
       >
-        Используйте этот код для установки нового пароля
+        Используйте этот код для установки нового пароля. Код действует 15 минут.
       </p>
       <div
         style="
@@ -117,7 +126,8 @@ export class MailerService {
     });
   }
   async VerifycationCode(code:string, email:string): Promise<boolean> {
-  const user = await this.userRepository.findOne({ where: {email} });
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await this.userRepository.findOne({ where: { email: normalizedEmail } });
   if (!user) {
     
     throw new BadRequestException('Пользователь не найден');
@@ -130,7 +140,7 @@ export class MailerService {
   if (user.verificationCodeExpires && user.verificationCodeExpires < new Date()) {
     throw new BadRequestException('Код просрочен. Запросите новый');
   }
-    await this.userRepository.update({ email }, {
+    await this.userRepository.update({ id: user.id }, {
       verificationCode: null,
       verificationCodeExpires: null,
       emailVerified: true,

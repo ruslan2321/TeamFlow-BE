@@ -9,6 +9,7 @@ import { MailerModule as NestMailerModule } from '@nestjs-modules/mailer';
 @Module({
   controllers: [MailerController],
   providers: [MailerService],
+  exports: [NestMailerModule],
   imports:[
     NestMailerModule.forRoot({
       transport:{

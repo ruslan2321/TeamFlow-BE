@@ -16,9 +16,11 @@ export class MailerController {
 
   @Post('sendcode')
   async sendCode(@Body() dto: SendEmailDto) {
-    try {
-      await this.mailerService.SendCodeV(dto.email);
-    } catch {}
+    await this.mailerService.SendCodeV(dto.email);
+    return {
+      message:
+        'Если email зарегистрирован, на него отправлен код для сброса пароля',
+    };
   }
 
   @Post('verifycode')

@@ -9,28 +9,28 @@ import {
   Post,
 } from '@nestjs/common';
 import { CardService } from './card.service';
-import { Card } from './card.entites';
 import { CreateTask } from './dto/create-task';
 import { EditTask } from './dto/update-task';
+import { TaskResponseDto } from 'src/common/mappers/card.mapper';
 
 @Controller('task')
 export class CardController {
   constructor(private service: CardService) {}
 
   @Get()
-  async getTasks(): Promise<Card[]> {
+  async getTasks(): Promise<TaskResponseDto[]> {
     return this.service.Task();
   }
 
   @Get('task')
-  async getTasksLegacy(): Promise<Card[]> {
+  async getTasksLegacy(): Promise<TaskResponseDto[]> {
     return this.service.Task();
   }
 
   @Get('my/:userId')
   async getMyTasks(
     @Param('userId', ParseIntPipe) userId: number,
-  ): Promise<Card[]> {
+  ): Promise<TaskResponseDto[]> {
     return this.service.getMyTasks(userId);
   }
 
@@ -61,7 +61,7 @@ export class CardController {
   @Get(':task_id')
   async getView(
     @Param('task_id', ParseIntPipe) task_id: number,
-  ): Promise<Card> {
+  ): Promise<TaskResponseDto> {
     return this.service.viewTask(task_id);
   }
 }
