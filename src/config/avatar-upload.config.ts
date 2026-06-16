@@ -3,7 +3,11 @@ import { existsSync, mkdirSync } from 'fs';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 
-export const UPLOADS_DIR = join(process.cwd(), 'uploads');
+const uploadsRoot = process.env.VERCEL
+  ? join('/tmp', 'uploads')
+  : join(process.cwd(), 'uploads');
+
+export const UPLOADS_DIR = uploadsRoot;
 export const AVATARS_DIR = join(UPLOADS_DIR, 'avatars');
 
 export function ensureUploadDirs(): void {
