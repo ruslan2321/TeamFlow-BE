@@ -41,10 +41,15 @@ export class CardService {
 
     const saved = await this.repo.save(newTask);
 
-    return this.repo.findOneOrFail({
-      where: { task_id: saved.task_id },
-      relations: ['assignedUser'],
-    });
+    if (saved.task_id) {
+      const task = await this.repo.findOne({
+        where: { task_id: saved.task_id },
+        relations: ['assignedUser'],
+      });
+      if (task) return task;
+    }
+
+    return saved;
   }
   async deletTask(task_id:number): Promise<void>{
     const res = await this.repo.delete(task_id)
@@ -86,9 +91,12 @@ export class CardService {
 
     if ('userId' in cleanDto) {
       if (cleanDto.userId === null) {
-        await this.repo.update(task_id, { userId: null });
+        await this.repo.update({ task_id }, { assignedUser: null });
       } else if (typeof cleanDto.userId === 'number') {
-        await this.repo.update(task_id, { userId: cleanDto.userId });
+        await this.repo.update(
+          { task_id },
+          { assignedUser: { id: cleanDto.userId } },
+        );
       }
       delete cleanDto.userId;
     }

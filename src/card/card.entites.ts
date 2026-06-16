@@ -1,7 +1,6 @@
 import { User } from 'src/profile/user.entities';
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -26,8 +25,8 @@ export class Card {
   @Column({ length: 255 })
   name_task!: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  createAt!: Date;
+  @Column({ type: 'varchar', nullable: true })
+  createAt!: string | null;
 
   @Column({ type: 'text', nullable: true, default: '' })
   CommentTask!: string;

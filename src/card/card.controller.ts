@@ -17,16 +17,23 @@ import { EditTask } from './dto/update-task';
 export class CardController {
   constructor(private service: CardService) {}
 
-  @Get('task')
+  @Get()
   async getTasks(): Promise<Card[]> {
     return this.service.Task();
   }
+
+  @Get('task')
+  async getTasksLegacy(): Promise<Card[]> {
+    return this.service.Task();
+  }
+
   @Get('my/:userId')
   async getMyTasks(
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<Card[]> {
     return this.service.getMyTasks(userId);
   }
+
   @Post('add_task/:userId')
   async addTask(
     @Body() dto: CreateTask,
@@ -34,12 +41,7 @@ export class CardController {
   ) {
     return this.service.addTask(dto, userId);
   }
-  @Get(':task_id')
-  async getView(
-    @Param('task_id', ParseIntPipe) task_id: number,
-  ): Promise<Card> {
-    return this.service.viewTask(task_id);
-  }
+
   @Delete('delet/:task_id')
   async deleteTask(
     @Param('task_id', ParseIntPipe) task_id: number,
@@ -53,5 +55,13 @@ export class CardController {
     @Body() dto: EditTask,
   ) {
     return this.service.editTask(task_id, dto);
+  }
+
+  /** Должен быть последним среди GET — иначе перехватывает /task/task */
+  @Get(':task_id')
+  async getView(
+    @Param('task_id', ParseIntPipe) task_id: number,
+  ): Promise<Card> {
+    return this.service.viewTask(task_id);
   }
 }
