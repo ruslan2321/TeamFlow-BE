@@ -1,35 +1,44 @@
+import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateUser {
-  @IsString({ message: 'Имя должно быть строкой' })
-  @IsNotEmpty({ message: 'Имя обязательно' })
-  name!: string;
+  @IsString({ message: 'Имя пользователя должно быть строкой' })
+  @IsNotEmpty({ message: 'Имя пользователя обязательно' })
+  username!: string;
 
-  @IsString({ message: 'Имя должно быть строкой' })
-  @IsNotEmpty({ message: 'Имя обязательно' })
-  firstname!: string;
-
-  @IsString({ message: 'Фамилия должна быть строкой' })
-  @IsNotEmpty({ message: 'Фамилия обязательна' })
-  lastname!: string;
-
+  @IsOptional()
   @IsString({ message: 'Логин должен быть строкой' })
-  @IsNotEmpty({ message: 'Логин обязателен' })
-  login!: string;
+  @Transform(({ obj, value }) =>
+    (value ?? obj.login ?? obj.username ?? '').toString().trim(),
+  )
+  login?: string;
+
+  @IsEmail({}, { message: 'Некорректный email' })
+  @IsNotEmpty({ message: 'Email обязателен' })
+  email!: string;
 
   @IsString({ message: 'Пароль должен быть строкой' })
   @IsNotEmpty({ message: 'Пароль обязателен' })
   password!: string;
 
-  @IsString({ message: 'Роль должна быть строкой' })
-  @IsNotEmpty({ message: 'Роль обязательна' })
-  role!: string;
-
-  @IsString({ message: 'Должность должна быть строкой' })
-  @IsNotEmpty({ message: 'Должность обязательна' })
-  post!: string;
+  @IsOptional()
+  @IsString()
+  firstname?: string;
 
   @IsOptional()
-  @IsEmail({}, { message: 'Некорректный email' })
-  email?: string;
+  @IsString()
+  lastname?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  post?: string;
+
+  /** @deprecated используйте username */
+  @IsOptional()
+  @IsString()
+  name?: string;
 }

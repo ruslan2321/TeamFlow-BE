@@ -57,23 +57,31 @@ export class UserService {
     dto: CreateUser,
   ): Promise<{ user: UserProfileDto; token: string }> {
     try {
-      const login = dto.login.trim();
+      const username = (dto.username ?? dto.name ?? '').trim();
+      if (!username) {
+        throw new BadRequestException('Имя пользователя обязательно');
+      }
+
+      const login = (dto.login ?? dto.username ?? '').trim();
+      if (!login) {
+        throw new BadRequestException('Логин обязателен');
+      }
+
+      const email = dto.email.trim().toLowerCase();
+
       const existingLogin = await this.repo.findOne({ where: { login } });
       if (existingLogin) {
         throw new BadRequestException('Этот логин уже занят');
       }
 
-      const username =
-        dto.name.trim() ||
-        `${dto.firstname.trim()} ${dto.lastname.trim()}`.trim() ||
-        login;
-
-      const email =
-        dto.email?.trim().toLowerCase() || `${login}@teamflow.local`;
-
       const existingEmail = await this.repo.findOne({ where: { email } });
       if (existingEmail) {
         throw new BadRequestException('Этот email уже занят');
+      }
+
+      const existingUsername = await this.repo.findOne({ where: { username } });
+      if (existingUsername) {
+        throw new BadRequestException('Это имя пользователя уже занято');
       }
 
       const bcryptRounds = process.env.VERCEL ? 8 : 10;
@@ -84,8 +92,8 @@ export class UserService {
         email,
         login,
         password: hashPass,
-        role: dto.role.trim(),
-        department: dto.post.trim(),
+        role: dto.role?.trim() || 'user',
+        department: dto.post?.trim() || undefined,
       });
 
       const savedUser = await this.repo.save(user);
