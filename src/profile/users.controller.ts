@@ -23,7 +23,7 @@ import { login } from './dto/login-user-dto';
 import { SearchUsersDto } from './dto/search-user-dto';
 import { AddToTeamDto } from './dto/add-to-team.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { avatarUploadOptions } from '../config/avatar-upload.config';
+import { getAvatarUploadOptions } from '../config/avatar-upload.config';
 import { toAuthResponse, toRegisterResponse } from '../common/mappers/user.mapper';
 
 @Controller('')
@@ -99,7 +99,7 @@ export class UsersController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post('update_avatar')
-  @UseInterceptors(FileInterceptor('avatar', avatarUploadOptions))
+  @UseInterceptors(FileInterceptor('avatar', getAvatarUploadOptions()))
   async uploadAvatar(
     @Req() req: any,
     @UploadedFile() file: Express.Multer.File,
@@ -109,7 +109,7 @@ export class UsersController {
 
   @UseGuards(AuthGuard('jwt'))
   @Patch('update_avatar')
-  @UseInterceptors(FileInterceptor('avatar', avatarUploadOptions))
+  @UseInterceptors(FileInterceptor('avatar', getAvatarUploadOptions()))
   async patchAvatar(
     @Req() req: any,
     @UploadedFile() file: Express.Multer.File,

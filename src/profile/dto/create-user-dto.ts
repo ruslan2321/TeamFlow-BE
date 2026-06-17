@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateUser {
   @IsString({ message: 'Имя должно быть строкой' })
@@ -9,23 +9,27 @@ export class CreateUser {
   @IsNotEmpty({ message: 'Имя обязательно' })
   firstname!: string;
 
-  @IsString({ message: 'Имя должно быть строкой' })
-  @IsNotEmpty({ message: 'Имя обязательно' })
+  @IsString({ message: 'Фамилия должна быть строкой' })
+  @IsNotEmpty({ message: 'Фамилия обязательна' })
   lastname!: string;
 
-  @IsString({ message: 'Имя должно быть строкой' })
-  @IsNotEmpty({ message: 'Имя обязательно' })
+  @IsString({ message: 'Логин должен быть строкой' })
+  @IsNotEmpty({ message: 'Логин обязателен' })
   login!: string;
 
-  @IsString({ message: 'Имя должно быть строкой' })
-  @IsNotEmpty({ message: 'Имя обязательно' })
+  @IsString({ message: 'Пароль должен быть строкой' })
+  @IsNotEmpty({ message: 'Пароль обязателен' })
   password!: string;
 
-  @IsString({ message: 'Имя должно быть строкой' })
-  @IsNotEmpty({ message: 'Имя обязательно' })
+  @IsString({ message: 'Роль должна быть строкой' })
+  @IsNotEmpty({ message: 'Роль обязательна' })
   role!: string;
 
-  @IsString({ message: 'Имя должно быть строкой' })
-  @IsNotEmpty({ message: 'Имя обязательно' })
+  @IsString({ message: 'Должность должна быть строкой' })
+  @IsNotEmpty({ message: 'Должность обязательна' })
   post!: string;
+
+  @IsOptional()
+  @IsEmail({}, { message: 'Некорректный email' })
+  email?: string;
 }

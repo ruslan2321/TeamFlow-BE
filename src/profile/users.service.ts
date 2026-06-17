@@ -57,9 +57,37 @@ export class UserService {
     dto: CreateUser,
   ): Promise<{ user: UserProfileDto; token: string }> {
     try {
-      const salt = 10;
-      const hashPass = await bcrypt.hash(dto.password, salt);
-      const user = this.repo.create({ ...dto, password: hashPass });
+      const login = dto.login.trim();
+      const existingLogin = await this.repo.findOne({ where: { login } });
+      if (existingLogin) {
+        throw new BadRequestException('Этот логин уже занят');
+      }
+
+      const username =
+        dto.name.trim() ||
+        `${dto.firstname.trim()} ${dto.lastname.trim()}`.trim() ||
+        login;
+
+      const email =
+        dto.email?.trim().toLowerCase() || `${login}@teamflow.local`;
+
+      const existingEmail = await this.repo.findOne({ where: { email } });
+      if (existingEmail) {
+        throw new BadRequestException('Этот email уже занят');
+      }
+
+      const bcryptRounds = process.env.VERCEL ? 8 : 10;
+      const hashPass = await bcrypt.hash(dto.password, bcryptRounds);
+
+      const user = this.repo.create({
+        username,
+        email,
+        login,
+        password: hashPass,
+        role: dto.role.trim(),
+        department: dto.post.trim(),
+      });
+
       const savedUser = await this.repo.save(user);
 
       const payload = {
@@ -73,6 +101,9 @@ export class UserService {
 
       return { user: this.sanitizeUser(savedUser), token };
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       console.error('createUser error:', error);
       throw new InternalServerErrorException(
         'Ошибка при создании пользователя',

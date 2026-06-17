@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { existsSync, mkdirSync } from 'fs';
-import { diskStorage } from 'multer';
+import { diskStorage, Options } from 'multer';
 import { extname, join } from 'path';
 
 const isServerless =
@@ -18,8 +18,6 @@ export function ensureUploadDirs(): void {
     mkdirSync(AVATARS_DIR, { recursive: true });
   }
 }
-
-ensureUploadDirs();
 
 export function toAvatarUrl(filename?: string | null): string | null {
   if (!filename) return null;
@@ -39,31 +37,44 @@ export function avatarStorageFileName(filename?: string | null): string | null {
   return parts[parts.length - 1] || null;
 }
 
-export const avatarUploadOptions = {
-  storage: diskStorage({
-    destination: AVATARS_DIR,
-    filename: (_req: unknown, file: Express.Multer.File, cb) => {
-      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-      cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+let cachedAvatarUploadOptions: Options | undefined;
+
+/** Ленивая инициализация — multer не создаёт папки при import модуля на Vercel. */
+export function getAvatarUploadOptions(): Options {
+  if (cachedAvatarUploadOptions) {
+    return cachedAvatarUploadOptions;
+  }
+
+  ensureUploadDirs();
+
+  cachedAvatarUploadOptions = {
+    storage: diskStorage({
+      destination: AVATARS_DIR,
+      filename: (_req: unknown, file: Express.Multer.File, cb) => {
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+        cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+      },
+    }),
+    fileFilter: (
+      _req: unknown,
+      file: Express.Multer.File,
+      cb: (error: Error | null, acceptFile: boolean) => void,
+    ) => {
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        return cb(
+          new BadRequestException('Разрешены только JPG, PNG и WEBP'),
+          false,
+        );
+      }
+
+      cb(null, true);
     },
-  }),
-  fileFilter: (
-    _req: unknown,
-    file: Express.Multer.File,
-    cb: (error: Error | null, acceptFile: boolean) => void,
-  ) => {
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    limits: {
+      fileSize: 5 * 1024 * 1024,
+    },
+  };
 
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      return cb(
-        new BadRequestException('Разрешены только JPG, PNG и WEBP'),
-        false,
-      );
-    }
-
-    cb(null, true);
-  },
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
-};
+  return cachedAvatarUploadOptions;
+}
