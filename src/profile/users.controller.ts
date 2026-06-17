@@ -21,7 +21,7 @@ import { UserService } from './users.service';
 import { CreateUser } from './dto/create-user-dto';
 import { login } from './dto/login-user-dto';
 import { SearchUsersDto } from './dto/search-user-dto';
-import { AddToTeamDto } from './dto/add-to-team.dto';
+import { AddToTeamDto, resolveMemberId } from './dto/add-to-team.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { getAvatarUploadOptions } from '../config/avatar-upload.config';
 import { toAuthResponse, toRegisterResponse } from '../common/mappers/user.mapper';
@@ -72,7 +72,7 @@ export class UsersController {
     @Param('ownerId', ParseIntPipe) ownerId: number,
     @Body() dto: AddToTeamDto,
   ) {
-    return this.service.addToTeam(ownerId, dto.memberId);
+    return this.service.addToTeam(ownerId, resolveMemberId(dto));
   }
 
   @Get(':ownerId/team')
