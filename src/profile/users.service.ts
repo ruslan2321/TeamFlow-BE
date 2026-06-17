@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { User } from './user.entities';
-import { CreateUser } from './dto/create-user-dto';
+import { CreateUser, resolveCreateUserIdentity } from './dto/create-user-dto';
 import { SearchUsersDto } from './dto/search-user-dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { promises as fs } from 'fs';
@@ -57,14 +57,14 @@ export class UserService {
     dto: CreateUser,
   ): Promise<{ user: UserProfileDto; token: string }> {
     try {
-      const username = (dto.username ?? dto.name ?? '').trim();
-      if (!username) {
-        throw new BadRequestException('Имя пользователя обязательно');
-      }
+      const { username, login } = resolveCreateUserIdentity(dto);
 
-      const login = (dto.login ?? dto.username ?? '').trim();
       if (!login) {
         throw new BadRequestException('Логин обязателен');
+      }
+
+      if (!username) {
+        throw new BadRequestException('Имя пользователя обязательно');
       }
 
       const email = dto.email.trim().toLowerCase();
