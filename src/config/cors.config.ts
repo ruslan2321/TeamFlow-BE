@@ -6,11 +6,18 @@ const DEFAULT_ORIGINS = [
   'https://team-flow-iwlet6sl3-alanks-projects-619353e8.vercel.app',
 ];
 
+/** Локальная разработка: localhost и 127.0.0.1 на любом порту */
+const LOCAL_DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+
 /** Любой preview/production на vercel.app (фронт меняет URL при каждом деплое) */
 const VERCEL_APP_ORIGIN = /^https:\/\/[\w-]+\.vercel\.app$/i;
 
 export function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) {
+    return true;
+  }
+
+  if (LOCAL_DEV_ORIGIN.test(origin)) {
     return true;
   }
 
