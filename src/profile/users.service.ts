@@ -84,7 +84,7 @@ export class UserService {
         throw new BadRequestException('Это имя пользователя уже занято');
       }
 
-      const bcryptRounds = process.env.VERCEL ? 8 : 10;
+      const bcryptRounds = process.env.VERCEL ? 6 : 10;
       const hashPass = await bcrypt.hash(dto.password, bcryptRounds);
 
       const user = this.repo.create({

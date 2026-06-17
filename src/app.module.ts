@@ -10,7 +10,7 @@ import { Card } from './card/card.entites';
 import { CardModule } from './card/card.module';
 import { MailerModule } from './mailer/mailer.module';
 import { ResetPasswordModule } from './reset-password/reset-password.module';
-import { getDatabaseUrl, shouldSynchronizeSchema } from './config/database-url';
+import { getDatabaseUrl, getTypeOrmExtraOptions, shouldSynchronizeSchema } from './config/database-url';
 
 @Module({
   imports: [
@@ -23,12 +23,8 @@ import { getDatabaseUrl, shouldSynchronizeSchema } from './config/database-url';
         synchronize: shouldSynchronizeSchema(),
         ssl: { rejectUnauthorized: false },
         keepConnectionAlive: !process.env.VERCEL,
-        extra: {
-          max: process.env.VERCEL ? 1 : 10,
-          connectionTimeoutMillis: 10_000,
-          idleTimeoutMillis: process.env.VERCEL ? 5_000 : 30_000,
-        },
-        retryAttempts: process.env.VERCEL ? 1 : 2,
+        extra: getTypeOrmExtraOptions(),
+        retryAttempts: process.env.VERCEL ? 0 : 2,
         retryDelay: 1000,
       }),
     }),
